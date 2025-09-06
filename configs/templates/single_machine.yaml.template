@@ -1,0 +1,44 @@
+# Single machine vLLM configuration template
+# Use case: Multi-GPU inference within a single server, no distributed overhead
+
+cluster:
+  name: "${CLUSTER_NAME:-single-machine-vllm}"
+
+model:
+  name: "${MODEL_NAME}"
+  max_model_len: ${MAX_MODEL_LEN}
+  trust_remote_code: true
+  gpu_memory_utilization: ${GPU_MEMORY_UTILIZATION}
+  swap_space: 4
+  quantization: null
+
+distributed:
+  strategy: "manual"
+  tensor_parallel_size: ${TENSOR_PARALLEL_SIZE}
+  pipeline_parallel_size: 1  # Single machine doesn't need pipeline parallelism
+
+nodes:
+  head:
+    ip: "${HEAD_NODE_IP}"
+    gpus: 8
+    cpus: 32
+    memory: "320GB"
+    
+  # workers: []  # Single machine mode doesn't need worker nodes
+
+service:
+  host: "0.0.0.0"
+  port: ${VLLM_API_PORT}
+  max_num_seqs: 32  # Single machine can handle more concurrent requests
+
+network:
+  nccl:
+    use_default: true
+
+environment:
+  python_path: "./venv/bin/python"
+  working_directory: "$(pwd)"
+
+monitoring:
+  enable_metrics: false  # Simplified single machine deployment
+  log_level: "INFO"

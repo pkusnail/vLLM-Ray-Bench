@@ -1,0 +1,44 @@
+# Single machine vLLM configuration example
+# Use case: Multi-GPU inference within a single server, no distributed overhead
+
+cluster:
+  name: "single-machine-vllm"
+
+model:
+  name: "Qwen/Qwen3-32B"
+  max_model_len: 32768
+  trust_remote_code: true
+  gpu_memory_utilization: 0.85  # 单机可以更激进
+  swap_space: 4
+  quantization: null
+
+distributed:
+  strategy: "manual"
+  tensor_parallel_size: 8  # Use all 8 GPUs for tensor parallelism
+  pipeline_parallel_size: 1  # Single machine doesn't need pipeline parallelism
+
+nodes:
+  head:
+    ip: "127.0.0.1"
+    gpus: 8
+    cpus: 32
+    memory: "320GB"
+    
+  # workers: []  # Single machine mode doesn't need worker nodes
+
+service:
+  host: "127.0.0.1"
+  port: 8000
+  max_num_seqs: 32  # Single machine can handle more concurrent requests
+
+network:
+  nccl:
+    use_default: true
+
+environment:
+  python_path: "./vllm_ray_env/bin/python"
+  working_directory: "/home/ubuntu/vllm-ray-bench"
+
+monitoring:
+  enable_metrics: false  # Simplified single machine deployment
+  log_level: "INFO"

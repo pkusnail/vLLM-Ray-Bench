@@ -1,0 +1,91 @@
+# vLLM分布式集群配置模板
+# 支持动态多节点扩展
+
+# ===== 集群基础配置 =====
+cluster:
+  name: "vllm-cluster"
+  max_concurrent_requests: 32
+  health_check_interval: 30
+
+# ===== 模型配置 =====
+model:
+  name: "Qwen/Qwen3-32B"
+  max_model_len: 32768
+  trust_remote_code: true
+  gpu_memory_utilization: 0.80
+  swap_space: 8
+  quantization: null
+
+# ===== 分布式配置 =====
+distributed:
+  # 并行策略: 自动计算或手动指定
+  strategy: "auto"  # auto, manual
+  tensor_parallel_size: null  # 自动从nodes计算，或手动指定
+  pipeline_parallel_size: null  # 自动从nodes计算，或手动指定
+  
+  # 手动配置示例（当strategy=manual时使用）
+  # tensor_parallel_size: 8
+  # pipeline_parallel_size: 2
+
+# ===== 节点配置 =====
+nodes:
+  # Head节点配置
+  head:
+    ip: "192.168.1.100"
+    port: 6379
+    dashboard_port: 8265
+    gpus: 8
+    cpus: 32
+    memory: "320GB"
+    
+  # Worker节点列表（支持动态扩展）
+  workers:
+    - ip: "192.168.1.101"
+      gpus: 8
+      cpus: 32
+      memory: "320GB"
+    # 添加更多节点只需在此列表中添加
+    # - ip: "192.168.1.102"
+    #   gpus: 8
+    #   cpus: 32
+    #   memory: "320GB"
+
+# ===== 网络配置 =====
+network:
+  # NCCL配置
+  nccl:
+    use_default: true  # 使用默认配置（推荐）
+    # 自定义NCCL设置（仅在use_default=false时生效）
+    custom_env: {}
+      # NCCL_DEBUG: "WARN"
+      # NCCL_IB_DISABLE: "1"
+
+# ===== 服务配置 =====
+service:
+  host: "0.0.0.0"
+  port: 8000
+  max_num_seqs: 16
+  
+  # 自动扩缩容配置
+  autoscaling:
+    min_replicas: 1
+    max_replicas: 1
+    target_requests_per_replica: 8
+
+# ===== 监控配置 =====
+monitoring:
+  enable_metrics: true
+  prometheus_port: 9090
+  log_level: "INFO"
+
+# ===== 环境配置 =====
+environment:
+  python_path: "./vllm_ray_env/bin/python"
+  ray_env_path: "./vllm_ray_env"
+  working_directory: "/home/ubuntu/vllm-ray-bench"
+
+# ===== 安全配置 =====
+security:
+  ssh_user: "ubuntu"
+  ssh_key_path: "~/.ssh/id_rsa"
+  api_key: null  # API密钥（可选）

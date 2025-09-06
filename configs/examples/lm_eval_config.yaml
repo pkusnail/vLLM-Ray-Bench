@@ -1,0 +1,10 @@
+model_args: "base_url=http://localhost:8000/v1,model=qwen"
+tasks: 
+  - mmlu
+  - gsm8k
+  - hellaswag
+num_fewshot: 5
+batch_size: 1
+device: cuda
+write_out: true
+output_path: ./lm_eval_results/

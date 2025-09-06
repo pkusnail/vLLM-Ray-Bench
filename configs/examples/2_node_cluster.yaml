@@ -1,0 +1,55 @@
+# 2-node cluster configuration example
+# Use case: 2 servers, each with 8 GPUs
+
+cluster:
+  name: "qwen3-2node-cluster"
+  max_concurrent_requests: 32
+
+model:
+  name: "Qwen/Qwen3-32B"
+  max_model_len: 32768
+  trust_remote_code: true
+  gpu_memory_utilization: 0.80
+  swap_space: 8
+  quantization: null
+
+distributed:
+  strategy: "auto"  # Will configure PP=2, TP=8
+
+nodes:
+  head:
+    ip: "192.168.1.100"
+    port: 6379
+    dashboard_port: 8265
+    gpus: 8
+    cpus: 32
+    memory: "320GB"
+    
+  workers:
+    - ip: "192.168.1.101"
+      gpus: 8
+      cpus: 32
+      memory: "320GB"
+
+service:
+  host: "0.0.0.0"
+  port: 8000
+  max_num_seqs: 16
+
+network:
+  nccl:
+    use_default: true
+
+environment:
+  python_path: "./vllm_ray_env/bin/python"
+  ray_env_path: "./vllm_ray_env"
+  working_directory: "/home/ubuntu/vllm-ray-bench"
+
+security:
+  ssh_user: "ubuntu"
+  ssh_key_path: "~/.ssh/id_rsa"
+
+monitoring:
+  enable_metrics: true
+  prometheus_port: 9090
+  log_level: "INFO"

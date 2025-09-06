@@ -1,0 +1,53 @@
+# Ray集群配置文件
+# 适用于2台服务器，每台8个40GB A100
+
+# 集群基础配置
+cluster_name: vllm-qwen-cluster
+max_workers: 2
+
+# 认证配置
+auth:
+  ssh_user: ubuntu
+  ssh_private_key: ~/.ssh/id_rsa
+
+# Head节点配置
+head_node:
+  instance_type: head
+  min_workers: 0
+  max_workers: 0
+  resources:
+    CPU: 32
+    GPU: 8
+    memory: 320000000000  # 320GB
+  node_config:
+    ray_start_commands:
+      - ray start --head --port=6379 --object-manager-port=8076 --dashboard-host=0.0.0.0 --dashboard-port=8265
+    initialization_commands:
+      - sudo apt-get update
+      - pip install -U pip
+
+# Worker节点配置  
+worker_nodes:
+  - instance_type: worker
+    min_workers: 1
+    max_workers: 1
+    resources:
+      CPU: 32
+      GPU: 8
+      memory: 320000000000  # 320GB
+    node_config:
+      ray_start_commands:
+        - ray start --address=$RAY_HEAD_IP:6379
+      initialization_commands:
+        - sudo apt-get update
+        - pip install -U pip
+
+# 设置命令
+setup_commands:
+  - echo 'export PATH="$HOME/anaconda3/bin:$PATH"' >> ~/.bashrc
+  - source ~/.bashrc
+
+# 文件同步
+file_mounts:
+  "/home/ubuntu/vllm_ray_env": "/home/ubuntu/vllm-ray-bench/vllm_ray_env"
+  "/home/ubuntu/scripts": "/home/ubuntu/vllm-ray-bench/scripts"
