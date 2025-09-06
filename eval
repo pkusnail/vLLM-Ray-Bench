@@ -1,0 +1,312 @@
+#!/usr/bin/env python3
+"""
+vLLM-Ray-Bench Unified Evaluation Entry Point
+Supports standard benchmarks, cluster performance testing, and AIOps reasoning capability tests
+"""
+
+import sys
+import os
+import argparse
+import subprocess
+from pathlib import Path
+
+# Add project paths
+project_root = Path(__file__).parent.absolute()
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / 'evaluations'))
+
+def print_banner():
+    """Print banner"""
+    banner = """
+╔══════════════════════════════════════════════════════════════╗
+║                    vLLM-Ray-Bench Evaluation System           ║
+║                   Comprehensive Evaluation Suite              ║
+╚══════════════════════════════════════════════════════════════╝
+"""
+    print(banner)
+
+def run_standard_benchmarks(args):
+    """Run standard benchmark tests"""
+    print("🚀 Starting standard benchmark testing mode...")
+    
+    # Prefer ModelScope EvalScope framework
+    use_modelscope = getattr(args, 'use_modelscope', True)
+    
+    if use_modelscope:
+        print("📋 Using ModelScope EvalScope framework...")
+        from evaluations.standard_benchmarks.modelscope_eval_runner import ModelScopeEvalRunner
+        
+        runner = ModelScopeEvalRunner(
+            api_url=f"{args.model_url}/v1/chat/completions",
+            api_key="dummy"
+        )
+        
+        if args.list_benchmarks:
+            runner.list_supported_benchmarks()
+            return
+        
+        # Parse benchmark names
+        if args.benchmarks == "all":
+            benchmark_names = list(runner.supported_benchmarks.keys())
+            print(f"📊 Will run all {len(benchmark_names)} ModelScope supported benchmarks")
+        else:
+            benchmark_names = [b.strip() for b in args.benchmarks.split(",")]
+            # Filter only supported tests
+            supported_names = [name for name in benchmark_names if name in runner.supported_benchmarks]
+            if len(supported_names) != len(benchmark_names):
+                unsupported = [name for name in benchmark_names if name not in runner.supported_benchmarks]
+                print(f"⚠️  Following benchmarks not supported by ModelScope: {unsupported}")
+            benchmark_names = supported_names
+            print(f"📊 Will run specified benchmarks: {benchmark_names}")
+        
+        # Run benchmarks
+        results = runner.run_multiple_benchmarks(benchmark_names, args.limit)
+        
+        print("🎉 ModelScope standard benchmarks completed!")
+        return results
+    
+    else:
+        print("📋 Using lm-eval framework...")
+        from evaluations.standard_benchmarks.standard_benchmark_runner import StandardBenchmarkRunner
+        
+        runner = StandardBenchmarkRunner(
+            model_url=args.model_url,
+            model_name=args.model_name
+        )
+    
+    if args.list_benchmarks:
+        runner.list_available_benchmarks(show_details=args.verbose)
+        return
+    
+    # Use new benchmark parsing functionality
+    benchmark_names = runner.resolve_benchmark_names(args.benchmarks)
+    
+    if args.benchmarks.startswith("suite:"):
+        suite_name = args.benchmarks[6:]
+        print(f"📦 Will run test suite '{suite_name}': {len(benchmark_names)} benchmarks")
+    elif args.benchmarks.startswith("category:"):
+        category = args.benchmarks[9:]
+        print(f"📂 Will run category '{category}' benchmarks: {len(benchmark_names)} tests")
+    elif args.benchmarks.startswith("priority:"):
+        priority = args.benchmarks[9:]
+        print(f"🌟 Will run priority {priority} benchmarks: {len(benchmark_names)} tests")
+    elif args.benchmarks == "all":
+        print(f"📊 Will run all {len(benchmark_names)} benchmarks")
+    else:
+        print(f"📊 Will run specified benchmarks: {benchmark_names}")
+    
+    if len(benchmark_names) > 10:
+        estimated_time = sum(runner.benchmarks[name].estimated_time_minutes for name in benchmark_names if name in runner.benchmarks)
+        print(f"⏰ Estimated total test time: {estimated_time // 60}h{estimated_time % 60}m")
+        print("💡 Recommend using --limit parameter to reduce sample size for faster testing")
+    
+    # Run benchmarks
+    results = runner.run_multiple_benchmarks(benchmark_names, args.limit)
+    
+    print("\n🎉 Standard benchmarks completed!")
+    return results
+
+def run_cluster_performance(args):
+    """Run cluster performance testing"""
+    print("⚡ Starting cluster performance testing mode...")
+    
+    project_root = Path(__file__).parent.absolute()
+    script_path = project_root / "evaluations" / "cluster_performance" / "cluster_performance_test.py"
+    
+    if not os.path.exists(script_path):
+        print(f"❌ Cluster performance test script not found: {script_path}")
+        return
+    
+    # Run script
+    script_dir = script_path.parent
+    cmd = f"cd {script_dir} && python cluster_performance_test.py"
+    
+    print(f"💻 Executing command: {cmd}")
+    
+    try:
+        result = subprocess.run(cmd, shell=True, check=True)
+        print("✅ Cluster performance testing completed!")
+        return {"status": "success"}
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Cluster performance testing failed: {e}")
+        return {"status": "failed", "error": str(e)}
+
+def run_aiops_reasoning(args):
+    """Run AIOps reasoning capability testing"""
+    print("🧠 Starting AIOps reasoning capability testing mode...")
+    
+    project_root = Path(__file__).parent.absolute()
+    script_path = project_root / "evaluations" / "aiops_reasoning" / "aiops_reasoning_test.py"
+    
+    if not os.path.exists(script_path):
+        print(f"❌ AIOps reasoning test script not found: {script_path}")
+        return
+    
+    # Run script
+    script_dir = script_path.parent
+    cmd = f"cd {script_dir} && python aiops_reasoning_test.py"
+    
+    print(f"💻 Executing command: {cmd}")
+    
+    try:
+        result = subprocess.run(cmd, shell=True, check=True)
+        print("✅ AIOps reasoning capability testing completed!")
+        return {"status": "success"}
+    except subprocess.CalledProcessError as e:
+        print(f"❌ AIOps reasoning capability testing failed: {e}")
+        return {"status": "failed", "error": str(e)}
+
+def run_comprehensive_suite(args):
+    """Run comprehensive test suite"""
+    print("🎯 Starting comprehensive evaluation mode...")
+    print("Will run sequentially: Standard Benchmarks -> Cluster Performance -> AIOps Reasoning")
+    
+    all_results = {
+        "comprehensive_evaluation": True,
+        "timestamp": __import__('time').strftime("%Y-%m-%d %H:%M:%S"),
+        "results": {}
+    }
+    
+    # 1. Run standard benchmarks (quick version)
+    print(f"\n{'='*80}")
+    print("📊 Phase 1: Standard Benchmarks (limited samples)")
+    print("="*80)
+    args.benchmarks = "mmlu,bbh,math,gsm8k"  # Core tests
+    args.limit = 100  # Limit samples for faster testing
+    benchmark_results = run_standard_benchmarks(args)
+    all_results["results"]["standard_benchmarks"] = benchmark_results
+    
+    # 2. Run cluster performance testing  
+    print(f"\n{'='*80}")
+    print("⚡ Phase 2: Cluster Performance Testing")
+    print("="*80)
+    performance_results = run_cluster_performance(args)
+    all_results["results"]["cluster_performance"] = performance_results
+    
+    # 3. Run AIOps reasoning testing
+    print(f"\n{'='*80}")
+    print("🧠 Phase 3: AIOps Reasoning Capability Testing")
+    print("="*80)
+    aiops_results = run_aiops_reasoning(args)
+    all_results["results"]["aiops_reasoning"] = aiops_results
+    
+    # Save comprehensive results
+    import json
+    import time
+    project_root = Path(__file__).parent.absolute()
+    results_dir = project_root / "evaluations" / "results"
+    results_dir.mkdir(parents=True, exist_ok=True)
+    results_file = results_dir / f"comprehensive_evaluation_{int(time.time())}.json"
+    with open(results_file, 'w', encoding='utf-8') as f:
+        json.dump(all_results, f, ensure_ascii=False, indent=2)
+    
+    print(f"\n🎉 Comprehensive evaluation completed!")
+    print(f"📄 Detailed results saved: {results_file}")
+    
+    return all_results
+
+def main():
+    """Main function"""
+    print_banner()
+    
+    parser = argparse.ArgumentParser(
+        description="vLLM-Ray-Bench Unified Evaluation System",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # List all available standard benchmarks
+  ./eval standard --list-benchmarks
+  
+  # Run MMLU and BBH benchmarks  
+  ./eval standard --benchmarks mmlu,bbh
+  
+  # Run all standard benchmarks (limit to 100 samples per test)
+  ./eval standard --benchmarks all --limit 100
+  
+  # Run cluster performance testing
+  ./eval cluster-performance
+  
+  # Run AIOps reasoning capability testing  
+  ./eval aiops-reasoning
+  
+  # Run comprehensive test suite (includes all test types)
+  ./eval comprehensive
+        """
+    )
+    
+    # Global parameters
+    parser.add_argument("--model-url", default="http://localhost:8000", 
+                       help="vLLM API service address (default: http://localhost:8000)")
+    parser.add_argument("--model-name", default="Qwen/Qwen3-32B",
+                       help="Model name (default: Qwen/Qwen3-32B)")
+    
+    # Subcommands
+    subparsers = parser.add_subparsers(dest="command", help="Evaluation type")
+    
+    # Standard benchmark testing command
+    standard_parser = subparsers.add_parser("standard", help="Run standard benchmark tests (MMLU, BBH, GPQA, MATH, etc.)")
+    standard_parser.add_argument("--benchmarks", default="mmlu,bbh", 
+                               help="Benchmark names, comma separated, or use 'all' to run all tests (default: mmlu,bbh)")
+    standard_parser.add_argument("--limit", type=int, 
+                               help="Limit sample count per test (optional, for quick testing)")
+    standard_parser.add_argument("--list-benchmarks", action="store_true", 
+                               help="List all available benchmarks")
+    standard_parser.add_argument("--verbose", "-v", action="store_true",
+                               help="Show detailed information (use with --list-benchmarks)")
+    
+    # Cluster performance testing command
+    subparsers.add_parser("cluster-performance", help="Run cluster performance testing")
+    
+    # AIOps reasoning capability testing command
+    subparsers.add_parser("aiops-reasoning", help="Run AIOps reasoning capability testing")
+    
+    # Comprehensive testing command
+    subparsers.add_parser("comprehensive", help="Run comprehensive test suite (includes all test types)")
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        print("\n❌ Error: Please specify evaluation type")
+        return 1
+    
+    # 检查vLLM服务是否可用
+    print(f"🔍 检查vLLM服务状态: {args.model_url}")
+    try:
+        import requests
+        response = requests.get(f"{args.model_url}/v1/models", timeout=5)
+        if response.status_code == 200:
+            print("✅ vLLM服务连接正常")
+        else:
+            print(f"⚠️  vLLM服务响应异常: HTTP {response.status_code}")
+    except Exception as e:
+        print(f"❌ 无法连接到vLLM服务: {e}")
+        print("请确保vLLM集群正在运行并且地址正确")
+        return 1
+    
+    # 根据命令执行对应的测试
+    try:
+        if args.command == "standard":
+            run_standard_benchmarks(args)
+        elif args.command == "cluster-performance":
+            run_cluster_performance(args)
+        elif args.command == "aiops-reasoning":
+            run_aiops_reasoning(args)
+        elif args.command == "comprehensive":
+            run_comprehensive_suite(args)
+        else:
+            print(f"❌ 未知命令: {args.command}")
+            return 1
+            
+        print("\n🎊 评测任务执行完成!")
+        return 0
+        
+    except KeyboardInterrupt:
+        print("\n⚠️  用户中断了评测任务")
+        return 1
+    except Exception as e:
+        print(f"\n❌ 评测任务执行失败: {e}")
+        return 1
+
+if __name__ == "__main__":
+    sys.exit(main())
