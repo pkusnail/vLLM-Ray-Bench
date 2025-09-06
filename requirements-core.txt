@@ -1,0 +1,45 @@
+# Core Runtime Dependencies
+# Essential packages for vLLM cluster operation
+
+# Deep Learning Framework
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+
+# Distributed Computing
+ray[default,serve]>=2.7.0
+
+# vLLM and Transformers
+vllm>=0.2.0
+transformers>=4.35.0
+accelerate>=0.24.0
+sentencepiece>=0.1.99
+tokenizers>=0.15.0
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.4.0
+
+# Core Utilities
+numpy>=1.24.0
+pandas>=2.0.0
+pyyaml>=6.0.0
+requests>=2.31.0
+aiofiles>=23.2.0
+psutil>=5.9.0
+
+# Networking and Communication
+aiohttp>=3.8.0
+websockets>=11.0.0
+
+# Configuration Management
+click>=8.1.0
+rich>=13.0.0
+
+# Model Loading and Storage
+huggingface-hub>=0.17.0
+safetensors>=0.4.0
+
+# Performance and Monitoring
+prometheus-client>=0.17.0
