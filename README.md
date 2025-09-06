@@ -4,6 +4,17 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Production Ready](https://img.shields.io/badge/status-production%20ready-brightgreen.svg)](#)
 
+## Introduction
+
+vLLM-Ray-Bench is an all-in-one tool for LLM evaluation and cluster performance benchmarking.
+
+It enables you to quickly deploy large language models on Ray + vLLM clusters and provides two major capabilities:
+
+- **Model Capability Evaluation**: Run benchmarks on standard datasets (e.g., MMLU, GSM8K, C-Eval).
+- **Service Performance Benchmarking**: Measure cluster inference performance such as throughput, latency, and concurrency.
+
+The goal is to help researchers and engineers conduct model comparison, performance testing, and technology selection in a fast and standardized way.
+
 **Production-ready distributed vLLM inference cluster with dynamic scaling and configuration-driven deployment.**
 
 ## 🌟 Features
