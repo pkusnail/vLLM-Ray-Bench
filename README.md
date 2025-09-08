@@ -391,32 +391,6 @@ mypy src/
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
-## 📊 Performance & Benchmarks
-
-### Qwen3-32B Performance Validation
-
-| Test Category | Single Machine | Cluster (2-Node) | Status |
-|---------------|----------------|------------------|--------|
-| **Basic Functionality** | ✅ Pass | ✅ Pass | Both versions working |
-| **API Compatibility** | ✅ OpenAI Compatible | ✅ OpenAI Compatible | Standard endpoints |
-| **Stress Test (5 requests)** | ✅ 100% success | ✅ 100% success | Production ready |
-| **Throughput Benchmark** | 77.56 tok/s | 262.26 tok/s | **+238% improvement** |
-| **Response Quality** | ✅ High quality | ✅ High quality | Consistent output |
-| **Resource Utilization** | Single node efficient | Multi-node scalable | Architecture optimized |
-
-**🎯 Validation Summary:**
-- **✅ Architecture Refactor**: Successfully migrated from hardcoded 2-node to N-node dynamic scaling
-- **✅ Performance Verified**: Cluster achieves 2.4x throughput improvement over single machine  
-- **✅ Production Ready**: Both deployment modes achieve 100% reliability in testing
-- **✅ CLI Tools**: `vllm-single` and `vllm-cluster` commands fully functional
-
-### Hardware Requirements
-
-- **Minimum**: 2 nodes, 8 GPUs per node, 320GB RAM per node
-- **Recommended**: 4+ nodes, 8+ GPUs per node, 512GB+ RAM per node  
-- **Network**: 25Gbps+ inter-node connectivity
-- **Storage**: 100GB+ for model weights
-
 ## 🆘 Troubleshooting
 
 ### Common Issues
@@ -438,6 +412,7 @@ nvidia-smi  # Check GPU utilization
 ./scripts/deployment/reset_nccl_defaults.sh
 # Then redeploy
 ```
+
 ## Acknowledgments
 
 - [vLLM Team](https://github.com/vllm-project/vllm) for the excellent inference engine
